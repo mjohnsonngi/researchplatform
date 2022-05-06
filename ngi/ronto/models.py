@@ -40,6 +40,7 @@ class WXSProject(Project):
 class WXSRun(Run):
     pipeline = models.CharField(max_length=8)
     gpu = models.BooleanField(default=False)
+    dbsnp = models.CharField(max_length=4)
     REFERENCE_GENOME_CHOICES = [
                             ('h', "hg19"),
                             ('7', "GRCh37"),
@@ -49,7 +50,7 @@ class WXSRun(Run):
                         ]
     reference_genome = models.CharField(
                         max_length=1, choices=REFERENCE_GENOME_CHOICES, default='U')
-    align_version = models.CharField(max_length=20, blank=True)
+    aligner_version = models.CharField(max_length=20, blank=True)
     gatk_version = models.CharField(max_length=20, blank=True)
     samtools_version = models.CharField(
                         max_length=20, blank=True)

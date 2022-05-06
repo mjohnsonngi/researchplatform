@@ -33,6 +33,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'sarlacc.apps.SarlaccConfig',
     'ronto.apps.RontoConfig',
+    'bantha.apps.BanthaConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

@@ -3,7 +3,6 @@ from django.db import models
 
 
 class Participant(models.Model):
-    pheno_id = models.CharField(max_length=20, unique=True)
     date_added = models.DateField(auto_now_add=True)
     other_ids = models.ForeignKey(
         'self',
@@ -19,17 +18,19 @@ class Participant(models.Model):
 
 
 class Phenotype(models.Model):
-    name = models.CharField(max_length=15)
+    id_name = models.CharField(max_length=15)
     date_added = models.DateField(auto_now_add=True)
     date_effective = models.DateField()
-    cohort = models.CharField(max_length=10)
-    date_of_birth = models.DateField(blank=True)
     participant = models.ForeignKey(
-        'Participant',
-        on_delete=models.DO_NOTHING,
-        related_name="phenotype",
-        related_query_name="phenotypes",
-    )
+            'Participant',
+            on_delete=models.DO_NOTHING,
+            related_name="phenotype",
+            related_query_name="phenotypes",
+        )
+
+    cohort = models.CharField(
+        max_length=15)
+    date_of_birth = models.DateField(blank=True)
     RACE_CHOICES = [
         ('W', "White"),
         ('B', "Black/African American"),
@@ -137,8 +138,11 @@ class Phenotype(models.Model):
     age_onset = models.PositiveSmallIntegerField(blank=True)
     age_at_last = models.PositiveSmallIntegerField(blank=True)
 
+    def name(self):
+        return '%s_%s' % (self.id_name.upper(), self.cohort)
+
     def __str__(self):
-        return '%s_%s' % (self.participant.pheno_id.upper(), self.date_effective.isoformat())
+        return self.name()
 
 
 class Sample(models.Model):
