@@ -10,7 +10,8 @@ class Participant(models.Model):
         on_delete=models.DO_NOTHING,
         related_name="alias",
         related_query_name="aliases",
-        blank=True
+        blank=True,
+        null=True,
     )
 
     def __str__(self):
@@ -137,7 +138,7 @@ class Phenotype(models.Model):
     age_at_last = models.PositiveSmallIntegerField(blank=True)
 
     def __str__(self):
-        return '%s_%s' % (self.project.pheno_id.upper(), self.date_effective.isoformat())
+        return '%s_%s' % (self.participant.pheno_id.upper(), self.date_effective.isoformat())
 
 
 class Sample(models.Model):
@@ -162,19 +163,6 @@ class Sample(models.Model):
         return '%s_%s' % (self.name.upper(), self.project)
 
 
-class WXSSample(Sample):
-    barcode = models.CharField(max_length=10)
-    series = models.CharField(max_length=15)
-
-    @property
-    def full_sample_id(self):
-        "Returns the sample's full sample ID (FULLSMID)"
-        return '%s^%s^%s' % (self.name.upper(), self.barcode.upper(), self.project)
-
-    def __str__(self):
-        return self.full_sample_id
-
-
 class Project(models.Model):
     name = models.CharField(max_length=30)
     date_added = models.DateField(auto_now_add=True)
@@ -190,25 +178,6 @@ class Project(models.Model):
         return '%s_%s' % (self.start_date.strftime("%y%m"), self.name.upper())
 
 
-class WXSProject(Project):
-    center = models.CharField(max_length=10)
-    WXS_CHOICES = [
-            ('G', "WGS"),
-            ('E', "WES"),
-            ('B', "WGS_WES"),
-            ('U', "Unknown"),
-        ]
-    wxs = models.CharField(
-            max_length=1, choices=WXS_CHOICES, default='U')
-
-    def full_name(self):
-        "Returns the project's full name"
-        return '%s_%s_%s_%s' % (self.start_date.strftime("%y%m"), self.center.upper(), self.wxs, self.name.upper())
-
-    def __str__(self):
-        return self.full_name()
-
-
 class Run(models.Model):
     date_added = models.DateField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
@@ -217,35 +186,6 @@ class Run(models.Model):
 
     def __str__(self):
         return '%s_%s' % (self.sample, self.date_added.isoformat())
-
-
-class WXSRun(Run):
-    pipeline = models.CharField(max_length=8)
-    gpu = models.BooleanField(default=False)
-    REFERENCE_GENOME_CHOICES = [
-            ('h', "hg19"),
-            ('7', "GRCh37"),
-            ('8', "GRCh38"),
-            ('T', "T2T"),
-            ('U', "Unknown"),
-        ]
-    reference_genome = models.CharField(
-        max_length=1, choices=REFERENCE_GENOME_CHOICES, default='U')
-    align_version = models.CharField(max_length=20, blank=True)
-    gatk_version = models.CharField(max_length=20, blank=True)
-    samtools_version = models.CharField(max_length=20, blank=True)
-    RUN_TYPE_CHOICES = [
-            ('P', "Padded Exome"),
-            ('E', "Exome"),
-            ('G', "Genome"),
-        ]
-    run_type = models.CharField(
-        max_length=1, choices=RUN_TYPE_CHOICES, default='P')
-    bedtools_version = models.CharField(max_length=20, blank=True)
-    picard_version = models.CharField(max_length=20, blank=True)
-
-    def __str__(self):
-        return '%s_%s_%s' % (self.sample, self.pipeline, self.date_added.isoformat())
 
 
 class RawData(models.Model):
@@ -263,19 +203,6 @@ class RawData(models.Model):
         return self.sample
 
 
-class WXSRawData(RawData):
-    TYPE_CHOICES = [
-            ('I', "interleaved fastq"),
-            ('C', "cram"),
-            ('B', "bam"),
-            ('P', "paired-end fastq"),
-        ]
-    type = models.CharField(
-                max_length=1, choices=TYPE_CHOICES)
-    flowcell = models.CharField(max_length=10)
-    lane = models.CharField(max_length=1)
-
-
 class ProcessedData(models.Model):
     completed = models.BooleanField(default=False)
     date_completed = models.DateField(blank=True)
@@ -289,14 +216,3 @@ class ProcessedData(models.Model):
         on_delete=models.DO_NOTHING,
         related_name="processed_data",
     )
-
-
-class WXSProcessedData(ProcessedData):
-    RGcrams = ArrayField(models.CharField(max_length=1, blank=True))
-    ready_bam = models.CharField(max_length=1, blank=True)
-    gvcf = models.CharField(max_length=1, blank=True)
-    coverage = models.DecimalField(..., max_digits=5,
-                                   decimal_places=2, blank=True)
-    freemix = models.DecimalField(..., max_digits=6,
-                                  decimal_places=5, blank=True)
-    titv = models.DecimalField(..., max_digits=3, decimal_places=2, blank=True)
